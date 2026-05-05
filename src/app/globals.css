@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* MapLibre styles */
+@import 'maplibre-gl/dist/maplibre-gl.css';
+
+:root {
+  --background: 250 250 250;
+  --foreground: 17 17 17;
+}
+
+html {
+  /* Prevent text size auto-adjust on iOS landscape */
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  color: rgb(var(--foreground));
+  background: rgb(var(--background));
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+  /* Safe area insets for iOS notch / home indicator */
+  padding-top: env(safe-area-inset-top, 0);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  /* Better tap feedback on mobile */
+  -webkit-tap-highlight-color: transparent;
+  /* Prevent overflow on small screens */
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* Buttons + interactive elements: ≥44px touch target on mobile */
+@media (max-width: 640px) {
+  button,
+  [role="button"],
+  a.btn,
+  input[type="button"],
+  input[type="submit"] {
+    min-height: 44px;
+  }
+}
+
+/* Inputs: better mobile UX */
+input,
+select,
+textarea {
+  font-size: 16px; /* prevent iOS zoom-on-focus */
+}
+@media (min-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: 14px;
+  }
+}
+
+/* Smoother focus states */
+*:focus-visible {
+  outline: 2px solid rgb(218 37 29 / 0.5);
+  outline-offset: 2px;
+}
+
+/* Better table scroll on mobile */
+.scroll-hint {
+  position: relative;
+}
+.scroll-hint::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 24px;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.9));
+  pointer-events: none;
+}
