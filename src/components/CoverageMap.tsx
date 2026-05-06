@@ -1,16 +1,15 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import maplibregl, { Map as MapLibre } from 'maplibre-gl';
+import maplibregl, { Map as MapLibre, Popup } from 'maplibre-gl';
 import { useTranslations } from 'next-intl';
 import { api, type HeatmapPoint } from '@/lib/api';
 
-// Vietnam bounds, center on Da Nang
 const DEFAULT_CENTER: [number, number] = [108.2022, 16.0544];
 const DEFAULT_ZOOM = 6;
 
 const QUALITY_COLOR: Record<string, string> = {
-  excellent: '#10b981', // green
+  excellent: '#10b981',
   good:      '#84cc16',
   fair:      '#facc15',
   poor:      '#f97316',
@@ -29,6 +28,7 @@ export default function CoverageMap() {
   const t = useTranslations('map');
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibre | null>(null);
+  const popupRef = useRef<Popup | null>(null);
   const [points, setPoints] = useState<HeatmapPoint[]>([]);
   const [loading, setLoading] = useState(false);
   const [carrier, setCarrier] = useState<string>('');
@@ -36,8 +36,6 @@ export default function CoverageMap() {
   // Init map once
   useEffect(() => {
     if (mapRef.current || !containerRef.current) return;
-    // Use MapTiler if NEXT_PUBLIC_MAPTILER_KEY is set (free 100k req/mo at maptiler.com),
-    // otherwise fall back to demotiles (low quality).
     const maptilerKey = process.env.NEXT_PUBLIC_MAPTILER_KEY;
     const styleUrl = maptilerKey
       ? `https://api.maptiler.com/maps/streets-v2/style.json?key=${maptilerKey}`
@@ -47,9 +45,44 @@ export default function CoverageMap() {
       style: styleUrl,
       center: DEFAULT_CENTER,
       zoom: DEFAULT_ZOOM,
+      pitch: 0,
+      maxPitch: 60,
     });
-    map.addControl(new maplibregl.NavigationControl(), 'top-right');
+    map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
+    map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-right');
     mapRef.current = map;
+
+    // Add 3D building extrusion when style supports it (MapTiler streets-v2 has 'building' source layer).
+    map.on('load', () => {
+      try {
+        const layers = map.getStyle().layers || [];
+        const hasBuildings = layers.some((l: any) => l['source-layer'] === 'building');
+        if (hasBuildings) {
+          // Insert below labels for clean look
+          const labelLayer = layers.find((l: any) => l.type === 'symbol' && l.layout?.['text-field']);
+          map.addLayer({
+            id: 'building-3d',
+            type: 'fill-extrusion',
+            source: 'openmaptiles',  // MapTiler default source name
+            'source-layer': 'building',
+            minzoom: 14,
+            paint: {
+              'fill-extrusion-color': '#aaa',
+              'fill-extrusion-height': [
+                'interpolate', ['linear'], ['zoom'],
+                14, 0,
+                15.5, ['coalesce', ['get', 'render_height'], ['get', 'height'], 5],
+              ],
+              'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
+              'fill-extrusion-opacity': 0.6,
+            },
+          }, labelLayer?.id);
+        }
+      } catch (err) {
+        console.warn('3D buildings unavailable for current style', err);
+      }
+    });
+
     return () => { map.remove(); mapRef.current = null; };
   }, []);
 
@@ -80,12 +113,8 @@ export default function CoverageMap() {
       }
     }
 
-    // Trigger fetch immediately when carrier changes (don't wait for map move)
-    if (map.loaded()) {
-      loadHeatmap();
-    } else {
-      map.once('load', loadHeatmap);
-    }
+    if (map.loaded()) loadHeatmap();
+    else map.once('load', loadHeatmap);
     map.on('moveend', loadHeatmap);
 
     return () => {
@@ -94,7 +123,7 @@ export default function CoverageMap() {
     };
   }, [carrier]);
 
-  // Render points as circles
+  // Render points as circles + click popup
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !map.isStyleLoaded()) return;
@@ -105,8 +134,9 @@ export default function CoverageMap() {
       geometry: { type: 'Point' as const, coordinates: [p.lngGrid, p.latGrid] },
       properties: {
         color: QUALITY_COLOR[qualityFor(p.avgDownloadMbps)],
-        size: Math.min(8, 2 + Math.log2(p.sampleCount + 1)),
         download: p.avgDownloadMbps,
+        latency: p.avgLatencyMs,
+        samples: p.sampleCount,
         carrier: p.carrierName,
         network: p.networkType,
       },
@@ -123,12 +153,58 @@ export default function CoverageMap() {
         source: sourceId,
         paint: {
           'circle-color': ['get', 'color'],
-          'circle-radius': ['get', 'size'],
-          'circle-opacity': 0.7,
-          'circle-stroke-width': 0.5,
+          // Bigger dots when zoomed out (visible at country level), smaller when zoomed in
+          'circle-radius': [
+            'interpolate', ['linear'], ['zoom'],
+            5,  6,    // country zoom — chấm to
+            8,  5,
+            12, 7,
+            16, 10,   // street zoom — chấm to hơn lại để click
+          ],
+          'circle-opacity': 0.85,
+          'circle-stroke-width': 1,
           'circle-stroke-color': '#ffffff',
         },
       });
+
+      // Click → popup with details
+      map.on('click', 'coverage-circles', (e) => {
+        const feature = e.features?.[0];
+        if (!feature) return;
+        const p = feature.properties as any;
+        const coords = (feature.geometry as any).coordinates as [number, number];
+
+        // Close existing popup
+        popupRef.current?.remove();
+
+        const html = `
+          <div style="font-family: -apple-system, sans-serif; font-size: 12px; min-width: 180px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <strong>${p.carrier} · ${p.network}</strong>
+              <span style="background: ${p.color}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px;">
+                ${qualityFor(Number(p.download))}
+              </span>
+            </div>
+            <table style="width: 100%; font-size: 11px;">
+              <tr><td>↓ Download</td><td style="text-align: right; font-weight: 600;">${p.download} Mbps</td></tr>
+              <tr><td>Ping</td><td style="text-align: right;">${p.latency} ms</td></tr>
+              <tr><td>Samples</td><td style="text-align: right;">${p.samples}</td></tr>
+            </table>
+            <div style="font-size: 10px; color: #999; margin-top: 4px;">
+              ${coords[1].toFixed(5)}, ${coords[0].toFixed(5)}
+            </div>
+          </div>
+        `;
+
+        popupRef.current = new maplibregl.Popup({ closeButton: true, maxWidth: '280px' })
+          .setLngLat(coords)
+          .setHTML(html)
+          .addTo(map);
+      });
+
+      // Cursor pointer over dots
+      map.on('mouseenter', 'coverage-circles', () => map.getCanvas().style.cursor = 'pointer');
+      map.on('mouseleave', 'coverage-circles', () => map.getCanvas().style.cursor = '');
     }
   }, [points]);
 
@@ -149,6 +225,8 @@ export default function CoverageMap() {
           <option value="VNPT">VNPT</option>
           <option value="MobiFone">MobiFone</option>
           <option value="Vietnamobile">Vietnamobile</option>
+          <option value="FPT">FPT</option>
+          <option value="CMC">CMC</option>
         </select>
         {loading && <p className="mt-1 text-xs text-gray-500">{t('loading')}</p>}
       </div>
