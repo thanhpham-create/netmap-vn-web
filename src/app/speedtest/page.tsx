@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { runSpeedTest, type SpeedTestResult, type SpeedTestPhase } from '@/lib/speedtest';
 import { getCurrentPosition, isInVietnam, type Coords } from '@/lib/geolocation';
+import { detectNetworkType } from '@/lib/network-info';
 import { useAuth } from '@/lib/auth';
 import { api } from '@/lib/api';
 
@@ -16,6 +17,14 @@ export default function SpeedtestPage() {
   const { ensureDeviceRegistered, tokens } = useAuth();
   const [carrier, setCarrier] = useState('Viettel');
   const [carrierAutoSet, setCarrierAutoSet] = useState(false);
+  const [detectedNetwork, setDetectedNetwork] = useState<ReturnType<typeof detectNetworkType> | null>(null);
+
+  // Detect network type (WiFi/cellular) on mount via navigator.connection
+  useEffect(() => {
+    const detected = detectNetworkType();
+    setDetectedNetwork(detected);
+    if (detected.networkType) setNetworkType(detected.networkType);
+  }, []);
 
   // Detect carrier from IP/ASN on mount (cached server-side 24h)
   const { data: whoami } = useQuery({
@@ -142,6 +151,27 @@ export default function SpeedtestPage() {
       {whoami?.carrier && carrier !== whoami.carrier && (
         <div className="rounded-md border border-vnred-200 bg-vnred-50 p-3 text-xs text-vnred-700">
           {t('mismatchWarning', { detected: whoami.carrier, selected: carrier })}
+        </div>
+      )}
+
+      {/* Network type detected banner */}
+      {detectedNetwork?.networkType && networkType === detectedNetwork.networkType && (
+        <div className="rounded-md border border-green-200 bg-green-50 p-2 text-xs text-green-900">
+          {t('networkDetected', { network: detectedNetwork.networkType })}
+        </div>
+      )}
+
+      {/* Network type mismatch warning */}
+      {detectedNetwork?.networkType && networkType !== detectedNetwork.networkType && (
+        <div className="rounded-md border border-vnred-200 bg-vnred-50 p-3 text-xs text-vnred-700">
+          {t('networkMismatch', { detected: detectedNetwork.networkType, selected: networkType })}
+        </div>
+      )}
+
+      {/* Browser doesn't support detection (Safari) */}
+      {detectedNetwork && !detectedNetwork.networkType && !detectedNetwork.rawType && (
+        <div className="rounded-md border border-yellow-200 bg-yellow-50 p-2 text-xs text-yellow-800">
+          {t('networkUnknown')}
         </div>
       )}
 

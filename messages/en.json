@@ -83,7 +83,10 @@
     "detectedNone": "Could not detect carrier (private network, VPN, or unknown ISP).",
     "detectedHint": "You can still pick manually below.",
     "mismatchWarning": "⚠️ You are connected via {detected} but selected {selected}. The result actually reflects {detected}, not {selected}.",
-    "localhostWarning": "⚠️ Testing on localhost — results do NOT reflect real Internet speed because both client and server run on the same machine (loopback ~10 Gbps). Deploy the backend to a real server, or test from another device."
+    "localhostWarning": "⚠️ Testing on localhost — results do NOT reflect real Internet speed because both client and server run on the same machine (loopback ~10 Gbps). Deploy the backend to a real server, or test from another device.",
+    "networkDetected": "Detected network: {network}",
+    "networkMismatch": "⚠️ You are on {detected} but selected {selected}. The browser cannot measure {selected} while connected via {detected} — the result reflects {detected}.",
+    "networkUnknown": "Could not detect network type (Safari/iOS not supported). Please pick the correct one manually."
   },
   "compare": {
     "title": "Compare carriers",
