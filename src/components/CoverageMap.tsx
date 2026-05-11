@@ -5,8 +5,10 @@ import maplibregl, { Map as MapLibre, Popup } from 'maplibre-gl';
 import { useTranslations } from 'next-intl';
 import { api, type HeatmapPoint } from '@/lib/api';
 
-const DEFAULT_CENTER: [number, number] = [108.2022, 16.0544];
-const DEFAULT_ZOOM = 6;
+const DEFAULT_CENTER: [number, number] = [106.5, 16.0];
+const DEFAULT_ZOOM = 5;
+// Vietnam bounding box — fitBounds on mount để chắc chắn thấy toàn quốc
+const VN_BOUNDS: [[number, number], [number, number]] = [[102.0, 8.0], [110.0, 24.0]];
 
 const QUALITY_COLOR: Record<string, string> = {
   excellent: '#10b981',
@@ -37,7 +39,11 @@ export default function CoverageMap() {
   useEffect(() => {
     if (mapRef.current || !containerRef.current) return;
     const maptilerKey = process.env.NEXT_PUBLIC_MAPTILER_KEY;
-    const styleUrl = maptilerKey
+    // Reject placeholder values (e.g. user copied from .env.example without replacing)
+    const isValidKey = maptilerKey
+      && maptilerKey.length > 8
+      && !/your[-_]?key|placeholder|example|change[-_]?me/i.test(maptilerKey);
+    const styleUrl = isValidKey
       ? `https://api.maptiler.com/maps/streets-v2/style.json?key=${maptilerKey}`
       : 'https://demotiles.maplibre.org/style.json';
     const map = new maplibregl.Map({
@@ -52,32 +58,48 @@ export default function CoverageMap() {
     map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-right');
     mapRef.current = map;
 
-    // Add 3D building extrusion when style supports it (MapTiler streets-v2 has 'building' source layer).
+    // FitBounds vào toàn Việt Nam ngay khi style load xong — đảm bảo người dùng
+    // thấy chấm rải khắp 30 tỉnh ngay lần đầu, không bị zoom kẹt ở Đà Nẵng.
+    map.once('load', () => {
+      map.fitBounds(VN_BOUNDS, { padding: 24, animate: false, duration: 0 });
+    });
+
+    // Add 3D building extrusion when style supports it.
+    // Detect source name dynamically — different styles use different names
+    // (openmaptiles, maptiler_planet, vector, etc.).
     map.on('load', () => {
       try {
         const layers = map.getStyle().layers || [];
-        const hasBuildings = layers.some((l: any) => l['source-layer'] === 'building');
-        if (hasBuildings) {
-          // Insert below labels for clean look
-          const labelLayer = layers.find((l: any) => l.type === 'symbol' && l.layout?.['text-field']);
-          map.addLayer({
-            id: 'building-3d',
-            type: 'fill-extrusion',
-            source: 'openmaptiles',  // MapTiler default source name
-            'source-layer': 'building',
-            minzoom: 14,
-            paint: {
-              'fill-extrusion-color': '#aaa',
-              'fill-extrusion-height': [
-                'interpolate', ['linear'], ['zoom'],
-                14, 0,
-                15.5, ['coalesce', ['get', 'render_height'], ['get', 'height'], 5],
-              ],
-              'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
-              'fill-extrusion-opacity': 0.6,
-            },
-          }, labelLayer?.id);
+        // Find an existing layer that uses the 'building' source-layer to learn its source name
+        const buildingLayer = layers.find((l: any) => l['source-layer'] === 'building');
+        if (!buildingLayer) {
+          console.info('Style has no building source-layer — skipping 3D extrusion');
+          return;
         }
+        const sourceName = (buildingLayer as any).source;
+        if (!sourceName) {
+          console.warn('Building layer has no source — skipping 3D');
+          return;
+        }
+        // Insert below labels for clean look
+        const labelLayer = layers.find((l: any) => l.type === 'symbol' && l.layout?.['text-field']);
+        map.addLayer({
+          id: 'building-3d',
+          type: 'fill-extrusion',
+          source: sourceName,
+          'source-layer': 'building',
+          minzoom: 14,
+          paint: {
+            'fill-extrusion-color': '#aaa',
+            'fill-extrusion-height': [
+              'interpolate', ['linear'], ['zoom'],
+              14, 0,
+              15.5, ['coalesce', ['get', 'render_height'], ['get', 'height'], 5],
+            ],
+            'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
+            'fill-extrusion-opacity': 0.6,
+          },
+        }, labelLayer?.id);
       } catch (err) {
         console.warn('3D buildings unavailable for current style', err);
       }
@@ -126,86 +148,102 @@ export default function CoverageMap() {
   // Render points as circles + click popup
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !map.isStyleLoaded()) return;
+    if (!map) return;
 
+    // BUG FIX: trước đây nếu style chưa load thì effect return luôn,
+    // và sẽ không bao giờ chạy lại cho đến khi `points` đổi. Kết quả là
+    // map trắng hoặc chỉ hiện vài chấm cũ. Giờ ta đợi style ready rồi render.
     const sourceId = 'coverage-points';
-    const features = points.map((p) => ({
-      type: 'Feature' as const,
-      geometry: { type: 'Point' as const, coordinates: [p.lngGrid, p.latGrid] },
-      properties: {
-        color: QUALITY_COLOR[qualityFor(p.avgDownloadMbps)],
-        download: p.avgDownloadMbps,
-        latency: p.avgLatencyMs,
-        samples: p.sampleCount,
-        carrier: p.carrierName,
-        network: p.networkType,
-      },
-    }));
-    const data = { type: 'FeatureCollection' as const, features };
 
-    if (map.getSource(sourceId)) {
-      (map.getSource(sourceId) as maplibregl.GeoJSONSource).setData(data);
-    } else {
-      map.addSource(sourceId, { type: 'geojson', data });
-      map.addLayer({
-        id: 'coverage-circles',
-        type: 'circle',
-        source: sourceId,
-        paint: {
-          'circle-color': ['get', 'color'],
-          // Bigger dots when zoomed out (visible at country level), smaller when zoomed in
-          'circle-radius': [
-            'interpolate', ['linear'], ['zoom'],
-            5,  6,    // country zoom — chấm to
-            8,  5,
-            12, 7,
-            16, 10,   // street zoom — chấm to hơn lại để click
-          ],
-          'circle-opacity': 0.85,
-          'circle-stroke-width': 1,
-          'circle-stroke-color': '#ffffff',
+    function doRender() {
+      const m = mapRef.current;
+      if (!m) return;
+      const features = points.map((p) => ({
+        type: 'Feature' as const,
+        geometry: { type: 'Point' as const, coordinates: [p.lngGrid, p.latGrid] },
+        properties: {
+          color: QUALITY_COLOR[qualityFor(p.avgDownloadMbps)],
+          download: p.avgDownloadMbps,
+          latency: p.avgLatencyMs,
+          samples: p.sampleCount,
+          carrier: p.carrierName,
+          network: p.networkType,
         },
-      });
+      }));
+      const data = { type: 'FeatureCollection' as const, features };
 
-      // Click → popup with details
-      map.on('click', 'coverage-circles', (e) => {
-        const feature = e.features?.[0];
-        if (!feature) return;
-        const p = feature.properties as any;
-        const coords = (feature.geometry as any).coordinates as [number, number];
+      if (m.getSource(sourceId)) {
+        (m.getSource(sourceId) as maplibregl.GeoJSONSource).setData(data);
+      } else {
+        m.addSource(sourceId, { type: 'geojson', data });
+        m.addLayer({
+          id: 'coverage-circles',
+          type: 'circle',
+          source: sourceId,
+          paint: {
+            'circle-color': ['get', 'color'],
+            'circle-radius': [
+              'interpolate', ['linear'], ['zoom'],
+              5,  6,
+              8,  5,
+              12, 7,
+              16, 10,
+            ],
+            'circle-opacity': 0.85,
+            'circle-stroke-width': 1,
+            'circle-stroke-color': '#ffffff',
+          },
+        });
 
-        // Close existing popup
-        popupRef.current?.remove();
+        // Click → popup with details
+        m.on('click', 'coverage-circles', (e) => {
+          const feature = e.features?.[0];
+          if (!feature) return;
+          const p = feature.properties as any;
+          const coords = (feature.geometry as any).coordinates as [number, number];
 
-        const html = `
-          <div style="font-family: -apple-system, sans-serif; font-size: 12px; min-width: 180px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-              <strong>${p.carrier} · ${p.network}</strong>
-              <span style="background: ${p.color}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px;">
-                ${qualityFor(Number(p.download))}
-              </span>
+          popupRef.current?.remove();
+
+          const html = `
+            <div style="font-family: -apple-system, sans-serif; font-size: 12px; min-width: 180px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <strong>${p.carrier} · ${p.network}</strong>
+                <span style="background: ${p.color}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px;">
+                  ${qualityFor(Number(p.download))}
+                </span>
+              </div>
+              <table style="width: 100%; font-size: 11px;">
+                <tr><td>↓ Download</td><td style="text-align: right; font-weight: 600;">${p.download} Mbps</td></tr>
+                <tr><td>Ping</td><td style="text-align: right;">${p.latency} ms</td></tr>
+                <tr><td>Samples</td><td style="text-align: right;">${p.samples}</td></tr>
+              </table>
+              <div style="font-size: 10px; color: #999; margin-top: 4px;">
+                ${coords[1].toFixed(5)}, ${coords[0].toFixed(5)}
+              </div>
             </div>
-            <table style="width: 100%; font-size: 11px;">
-              <tr><td>↓ Download</td><td style="text-align: right; font-weight: 600;">${p.download} Mbps</td></tr>
-              <tr><td>Ping</td><td style="text-align: right;">${p.latency} ms</td></tr>
-              <tr><td>Samples</td><td style="text-align: right;">${p.samples}</td></tr>
-            </table>
-            <div style="font-size: 10px; color: #999; margin-top: 4px;">
-              ${coords[1].toFixed(5)}, ${coords[0].toFixed(5)}
-            </div>
-          </div>
-        `;
+          `;
 
-        popupRef.current = new maplibregl.Popup({ closeButton: true, maxWidth: '280px' })
-          .setLngLat(coords)
-          .setHTML(html)
-          .addTo(map);
-      });
+          popupRef.current = new maplibregl.Popup({ closeButton: true, maxWidth: '280px' })
+            .setLngLat(coords)
+            .setHTML(html)
+            .addTo(m);
+        });
 
-      // Cursor pointer over dots
-      map.on('mouseenter', 'coverage-circles', () => map.getCanvas().style.cursor = 'pointer');
-      map.on('mouseleave', 'coverage-circles', () => map.getCanvas().style.cursor = '');
+        m.on('mouseenter', 'coverage-circles', () => { m.getCanvas().style.cursor = 'pointer'; });
+        m.on('mouseleave', 'coverage-circles', () => { m.getCanvas().style.cursor = ''; });
+      }
     }
+
+    // Đợi style sẵn sàng rồi mới render. Nếu style đã load thì gọi ngay.
+    if (map.isStyleLoaded()) {
+      doRender();
+    } else {
+      map.once('load', doRender);
+    }
+
+    return () => {
+      map.off('load', doRender);
+    };
   }, [points]);
 
   return (
