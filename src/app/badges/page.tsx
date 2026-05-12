@@ -28,13 +28,16 @@ export default function BadgesPage() {
     enabled: !!user && !!tokens.userToken,
   });
 
-  // Use my-progress data if logged in, else just show all badges as locked
-  const badges = my?.badges
-    ?? all?.badges.map((b) => ({ ...b, earned: false, progress: 0 }))
+  // Use my-progress data if logged in, else just show all badges as locked.
+  // Explicit Badge type collapses the union of array types — otherwise TS infers
+  // `typeof badges` as `MyBadge[] | { ...; earned: false }[]` and refuses .push().
+  type Badge = NonNullable<typeof my>['badges'][number];
+  const badges: Badge[] = my?.badges
+    ?? all?.badges.map((b) => ({ ...b, earned: false as boolean, progress: 0 }))
     ?? [];
 
   // Group by category
-  const grouped = badges.reduce<Record<string, typeof badges>>((acc, b) => {
+  const grouped = badges.reduce<Record<string, Badge[]>>((acc, b) => {
     (acc[b.category] = acc[b.category] || []).push(b);
     return acc;
   }, {});
