@@ -10,11 +10,14 @@ export function isPushSupported(): boolean {
     && 'Notification' in window;
 }
 
-function urlBase64ToUint8Array(base64: string): Uint8Array {
+// Allocate via explicit ArrayBuffer (not SharedArrayBuffer) so TS 5.7+ narrows
+// Uint8Array<ArrayBuffer>, which satisfies BufferSource for pushManager.subscribe.
+function urlBase64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
   const padding = '='.repeat((4 - (base64.length % 4)) % 4);
   const b64 = (base64 + padding).replace(/-/g, '+').replace(/_/g, '/');
   const raw = atob(b64);
-  const out = new Uint8Array(raw.length);
+  const buffer = new ArrayBuffer(raw.length);
+  const out = new Uint8Array(buffer);
   for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
   return out;
 }
