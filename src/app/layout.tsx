@@ -4,6 +4,8 @@ import { getLocale, getMessages } from 'next-intl/server';
 import './globals.css';
 import Providers from './providers';
 import Header from '@/components/Header';
+import Footer from '@/components/Footer';
+import DemoBanner from '@/components/DemoBanner';
 import ServiceWorkerRegister from '@/components/ServiceWorkerRegister';
 import InstallPrompt from '@/components/InstallPrompt';
 
@@ -36,7 +38,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Providers>
             <Header />
+            <DemoBanner />
             <main>{children}</main>
+            <Footer />
             <InstallPrompt />
             <ServiceWorkerRegister />
           </Providers>

@@ -25,6 +25,25 @@
     "title": "Bản đồ phủ sóng 5G Việt Nam",
     "subtitle": "Dữ liệu cộng đồng từ <b>speed test</b> và <b>báo cáo sự cố</b>. Di chuyển bản đồ để cập nhật khu vực."
   },
+  "demoBanner": {
+    "label": "Dữ liệu demo",
+    "description": "NetMap VN đang chạy với dữ liệu mẫu để minh hoạ. Khi cộng đồng đóng góp đủ, dữ liệu thực sẽ thay thế.",
+    "cta": "Đóng góp ngay →",
+    "dismiss": "Đóng cảnh báo"
+  },
+  "contributeCta": {
+    "title": "Bản đồ chính xác hơn nhờ bạn",
+    "subtitle": "Mỗi speed test hay báo cáo sự cố đều giúp cộng đồng có thông tin thực tế về chất lượng mạng.",
+    "runSpeedtest": "Chạy speed test",
+    "reportOutage": "Báo cáo sự cố"
+  },
+  "footer": {
+    "tagline": "Bản đồ phủ sóng & sự cố mạng di động Việt Nam, dữ liệu cộng đồng.",
+    "about": "Giới thiệu",
+    "terms": "Điều khoản",
+    "privacy": "Bảo mật",
+    "apiDocs": "API Docs"
+  },
   "outageBanner": {
     "loading": "Đang tải sự cố…",
     "noIssues": "Không có sự cố nghiêm trọng",

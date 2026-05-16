@@ -25,6 +25,25 @@
     "title": "Vietnam 5G Coverage Map",
     "subtitle": "Crowdsourced data from <b>speed tests</b> and <b>outage reports</b>. Pan the map to update the area."
   },
+  "demoBanner": {
+    "label": "Demo data",
+    "description": "NetMap VN is running with sample data for illustration. Real data will replace it as the community contributes.",
+    "cta": "Contribute now →",
+    "dismiss": "Dismiss banner"
+  },
+  "contributeCta": {
+    "title": "A better map, thanks to you",
+    "subtitle": "Every speed test or outage report helps the community get realistic network quality data.",
+    "runSpeedtest": "Run speed test",
+    "reportOutage": "Report outage"
+  },
+  "footer": {
+    "tagline": "Coverage & outage map for Vietnam mobile carriers, community-driven.",
+    "about": "About",
+    "terms": "Terms",
+    "privacy": "Privacy",
+    "apiDocs": "API Docs"
+  },
   "outageBanner": {
     "loading": "Loading outages…",
     "noIssues": "No major outages",
