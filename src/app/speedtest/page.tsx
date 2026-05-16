@@ -8,6 +8,7 @@ import { getCurrentPosition, isInVietnam, type Coords } from '@/lib/geolocation'
 import { detectNetworkType } from '@/lib/network-info';
 import { useAuth } from '@/lib/auth';
 import { api } from '@/lib/api';
+import { track, bucketSpeedMbps } from '@/lib/analytics';
 
 const CARRIERS = ['Viettel', 'VNPT', 'MobiFone', 'Vietnamobile', 'FPT', 'CMC'];
 const NETWORK_TYPES = ['5G', '5G-NSA', '5G-SA', '4G+', '4G', '3G', 'WIFI'];
@@ -56,6 +57,7 @@ export default function SpeedtestPage() {
   async function start() {
     setError(null); setResult(null); setSubmitted(false);
     setRunning(true);
+    track('speedtest_started', { carrier, network_type: networkType });
     try {
       // 1. Geo
       setProgress({ label: t('fetchingLocation') });
@@ -76,6 +78,12 @@ export default function SpeedtestPage() {
       );
       setResult(r);
       setProgress(null);
+      track('speedtest_completed', {
+        download_bucket: bucketSpeedMbps(r.downloadMbps),
+        upload_bucket: bucketSpeedMbps(r.uploadMbps),
+        carrier,
+        network_type: networkType,
+      });
     } catch (err: any) {
       setError(err.message);
       setProgress(null);
@@ -104,6 +112,11 @@ export default function SpeedtestPage() {
         { deviceToken, ...tokens },
       );
       setSubmitted(true);
+      track('speedtest_submitted', {
+        carrier,
+        network_type: networkType,
+        download_bucket: bucketSpeedMbps(result.downloadMbps),
+      });
     } catch (err: any) {
       setError(err.message);
     }

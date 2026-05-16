@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import maplibregl, { Map as MapLibre, Popup } from 'maplibre-gl';
 import { useTranslations } from 'next-intl';
 import { api, type HeatmapPoint } from '@/lib/api';
+import { track } from '@/lib/analytics';
 
 const DEFAULT_CENTER: [number, number] = [106.5, 16.0];
 const DEFAULT_ZOOM = 5;
@@ -255,7 +256,11 @@ export default function CoverageMap() {
         <label className="block text-xs font-medium text-gray-600">{t('carrierLabel')}</label>
         <select
           value={carrier}
-          onChange={(e) => setCarrier(e.target.value)}
+          onChange={(e) => {
+            const v = e.target.value;
+            setCarrier(v);
+            track('map_carrier_changed', { carrier: v || 'all' });
+          }}
           className="mt-1 rounded border px-2 py-1 text-sm"
         >
           <option value="">{t('carrierAll')}</option>

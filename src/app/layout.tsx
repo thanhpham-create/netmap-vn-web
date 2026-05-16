@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
+import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import './globals.css';
 import Providers from './providers';
 import Header from '@/components/Header';
@@ -95,6 +97,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <ServiceWorkerRegister />
           </Providers>
         </NextIntlClientProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

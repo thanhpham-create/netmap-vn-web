@@ -236,7 +236,13 @@
     "title": "Install NetMap VN",
     "subtitle": "Faster access, works offline.",
     "later": "Later",
-    "install": "Install"
+    "install": "Install",
+    "iosTitle": "Add to Home Screen",
+    "iosSubtitle": "iOS Safari doesn't auto-install. Follow 3 steps:",
+    "iosStep1": "Tap the Share button <icon></icon> in the bottom bar",
+    "iosStep2": "Scroll down and tap \"Add to Home Screen\"",
+    "iosStep3": "Tap \"Add\" in the top right corner",
+    "dismiss": "Dismiss"
   },
   "notifications": {
     "title": "Outage notifications",

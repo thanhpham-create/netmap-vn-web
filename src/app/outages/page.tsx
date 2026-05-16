@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { getCurrentPosition, isInVietnam, type Coords } from '@/lib/geolocation';
+import { track } from '@/lib/analytics';
 
 const OUTAGE_TYPE_KEYS = [
   'no_signal', 'slow', 'no_data', 'no_call', 'no_sms', 'intermittent',
@@ -73,6 +74,7 @@ export default function OutagesPage() {
       setDescription('');
       setShowForm(false);
       refetch();
+      track('outage_reported', { carrier, outage_type: outageType });
     } catch (err: any) {
       setSubmitMsg(`Lỗi: ${err.message}`);
     } finally {

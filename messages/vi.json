@@ -236,7 +236,13 @@
     "title": "Cài đặt NetMap VN",
     "subtitle": "Truy cập nhanh hơn, có thể dùng offline.",
     "later": "Để sau",
-    "install": "Cài đặt"
+    "install": "Cài đặt",
+    "iosTitle": "Thêm vào màn hình chính",
+    "iosSubtitle": "iOS Safari không hỗ trợ cài tự động. Làm theo 3 bước:",
+    "iosStep1": "Bấm nút Share <icon></icon> ở thanh dưới",
+    "iosStep2": "Cuộn xuống chọn \"Add to Home Screen\"",
+    "iosStep3": "Bấm \"Add\" ở góc phải trên",
+    "dismiss": "Đóng"
   },
   "notifications": {
     "title": "Thông báo sự cố",
