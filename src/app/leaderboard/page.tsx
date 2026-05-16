@@ -16,13 +16,17 @@ export default function LeaderboardPage() {
   const [kind, setKind] = useState<Kind>('contributors');
   const { tokens, user } = useAuth();
 
-  const { data, isLoading } = useQuery({
+  // useQuery's queryFn must return a single uniform type, but each leaderboard
+  // endpoint has a different `leaderboard` row shape. Cast to a loose union here;
+  // the render path branches on `kind` and narrows back to the right shape.
+  type AnyLB = { period: string; leaderboard: any[] };
+  const { data, isLoading } = useQuery<AnyLB>({
     queryKey: ['leaderboard', kind, period],
-    queryFn: () => {
-      if (kind === 'contributors') return api.leaderboardContributors(period);
-      if (kind === 'speed-tests')  return api.leaderboardSpeedTests(period);
-      if (kind === 'provinces')    return api.leaderboardProvinces(period, 20);
-      return api.leaderboardOutages(period);
+    queryFn: async () => {
+      if (kind === 'contributors') return api.leaderboardContributors(period) as Promise<AnyLB>;
+      if (kind === 'speed-tests')  return api.leaderboardSpeedTests(period) as Promise<AnyLB>;
+      if (kind === 'provinces')    return api.leaderboardProvinces(period, 20) as Promise<AnyLB>;
+      return api.leaderboardOutages(period) as Promise<AnyLB>;
     },
   });
 
