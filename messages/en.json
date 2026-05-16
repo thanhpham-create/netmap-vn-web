@@ -61,7 +61,20 @@
     "carrierAll": "All",
     "loading": "Loading…",
     "speedLegend": "Speed ↓",
-    "mbps": "Mbps"
+    "mbps": "Mbps",
+    "viewHistory": "View history"
+  },
+  "historyModal": {
+    "title": "Network history at this location",
+    "radius": "{meters}m radius",
+    "months": "{count} months",
+    "totalSamples": "{count} samples",
+    "loading": "Loading history…",
+    "noData": "No data for this point yet",
+    "noDataHint": "No speed tests recorded in this area for the selected period.",
+    "carrier": "Carrier",
+    "tests": "Tests",
+    "close": "Close"
   },
   "login": {
     "title": "Sign in to NetMap VN",

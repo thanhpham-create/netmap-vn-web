@@ -273,6 +273,27 @@ export const api = {
     return request<{ coverage: Coverage[] }>(`/api/v1/coverage?${p}`);
   },
 
+  coverageHistory: (q: { lat: number; lng: number; radius?: number; months?: number }) => {
+    const p = new URLSearchParams();
+    p.set('lat', String(q.lat)); p.set('lng', String(q.lng));
+    if (q.radius) p.set('radius', String(q.radius));
+    if (q.months) p.set('months', String(q.months));
+    return request<{
+      location: { latitude: number; longitude: number; radiusM: number };
+      monthsBack: number;
+      totalSamples: number;
+      history: Array<{
+        month: string;            // 'YYYY-MM'
+        carrier_name: string;
+        network_type: string;
+        sample_count: number;
+        avg_download_mbps: number;
+        avg_upload_mbps: number;
+        avg_latency_ms: number;
+      }>;
+    }>(`/api/v1/coverage/history?${p}`);
+  },
+
   heatmap: (q: { minLat: number; maxLat: number; minLng: number; maxLng: number; carrier?: string; days?: number }) => {
     const p = new URLSearchParams();
     p.set('minLat', String(q.minLat)); p.set('maxLat', String(q.maxLat));

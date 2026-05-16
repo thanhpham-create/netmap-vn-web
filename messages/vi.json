@@ -61,7 +61,20 @@
     "carrierAll": "Tất cả",
     "loading": "Đang tải…",
     "speedLegend": "Tốc độ ↓",
-    "mbps": "Mbps"
+    "mbps": "Mbps",
+    "viewHistory": "Xem lịch sử"
+  },
+  "historyModal": {
+    "title": "Lịch sử chất lượng mạng tại điểm này",
+    "radius": "bán kính {meters}m",
+    "months": "{count} tháng",
+    "totalSamples": "{count} lượt đo",
+    "loading": "Đang tải dữ liệu lịch sử…",
+    "noData": "Chưa có dữ liệu cho điểm này",
+    "noDataHint": "Khu vực này chưa có speed test nào trong khoảng thời gian được chọn.",
+    "carrier": "Nhà mạng",
+    "tests": "Lượt đo",
+    "close": "Đóng"
   },
   "login": {
     "title": "Đăng nhập NetMap VN",

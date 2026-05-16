@@ -5,6 +5,7 @@ import maplibregl, { Map as MapLibre, Popup } from 'maplibre-gl';
 import { useTranslations } from 'next-intl';
 import { api, type HeatmapPoint } from '@/lib/api';
 import { track } from '@/lib/analytics';
+import CoverageHistoryModal from './CoverageHistoryModal';
 
 const DEFAULT_CENTER: [number, number] = [106.5, 16.0];
 const DEFAULT_ZOOM = 5;
@@ -35,6 +36,7 @@ export default function CoverageMap() {
   const [points, setPoints] = useState<HeatmapPoint[]>([]);
   const [loading, setLoading] = useState(false);
   const [carrier, setCarrier] = useState<string>('');
+  const [historyAt, setHistoryAt] = useState<{ lat: number; lng: number } | null>(null);
 
   // Init map once
   useEffect(() => {
@@ -206,7 +208,7 @@ export default function CoverageMap() {
           popupRef.current?.remove();
 
           const html = `
-            <div style="font-family: -apple-system, sans-serif; font-size: 12px; min-width: 180px;">
+            <div style="font-family: -apple-system, sans-serif; font-size: 12px; min-width: 200px;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                 <strong>${p.carrier} · ${p.network}</strong>
                 <span style="background: ${p.color}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px;">
@@ -218,7 +220,13 @@ export default function CoverageMap() {
                 <tr><td>Ping</td><td style="text-align: right;">${p.latency} ms</td></tr>
                 <tr><td>Samples</td><td style="text-align: right;">${p.samples}</td></tr>
               </table>
-              <div style="font-size: 10px; color: #999; margin-top: 4px;">
+              <button class="coverage-history-btn"
+                      data-lat="${coords[1]}"
+                      data-lng="${coords[0]}"
+                      style="margin-top: 6px; width: 100%; background: #da251d; color: white; border: 0; border-radius: 4px; padding: 6px 8px; font-size: 11px; font-weight: 500; cursor: pointer;">
+                📊 ${t('viewHistory')}
+              </button>
+              <div style="font-size: 10px; color: #999; margin-top: 4px; text-align: center;">
                 ${coords[1].toFixed(5)}, ${coords[0].toFixed(5)}
               </div>
             </div>
@@ -228,6 +236,19 @@ export default function CoverageMap() {
             .setLngLat(coords)
             .setHTML(html)
             .addTo(m);
+
+          // Wire button click — popup DOM exists after setHTML+addTo
+          setTimeout(() => {
+            const btn = popupRef.current?.getElement()?.querySelector('.coverage-history-btn') as HTMLButtonElement | null;
+            if (btn) {
+              btn.onclick = () => {
+                const lat = parseFloat(btn.dataset.lat || '0');
+                const lng = parseFloat(btn.dataset.lng || '0');
+                setHistoryAt({ lat, lng });
+                track('coverage_history_opened', { lat: Math.round(lat * 100) / 100, lng: Math.round(lng * 100) / 100 });
+              };
+            }
+          }, 0);
         });
 
         m.on('mouseenter', 'coverage-circles', () => { m.getCanvas().style.cursor = 'pointer'; });
@@ -250,6 +271,15 @@ export default function CoverageMap() {
   return (
     <div className="relative h-[60vh] w-full overflow-hidden rounded-lg border bg-gray-100 shadow-sm md:h-[70vh]">
       <div ref={containerRef} className="h-full w-full" />
+
+      {/* History modal (chỉ render khi user click "Xem lịch sử" trên popup) */}
+      {historyAt && (
+        <CoverageHistoryModal
+          lat={historyAt.lat}
+          lng={historyAt.lng}
+          onClose={() => setHistoryAt(null)}
+        />
+      )}
 
       {/* Carrier filter */}
       <div className="absolute left-2 top-2 z-10 rounded-md bg-white/95 p-2 text-sm shadow-md md:left-3 md:top-3">
