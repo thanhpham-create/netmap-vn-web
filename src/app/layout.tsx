@@ -60,6 +60,11 @@ export const metadata: Metadata = {
     canonical: SITE_URL,
     languages: { 'vi-VN': SITE_URL, 'en-US': SITE_URL },
   },
+  verification: {
+    // Set NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION trên Vercel env với value Google cấp.
+    // Sau khi verified, có thể giữ tag hoặc remove (không bắt buộc).
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
+  },
 };
 
 export const viewport: Viewport = {
