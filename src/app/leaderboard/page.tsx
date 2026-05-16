@@ -8,7 +8,7 @@ import { useAuth } from '@/lib/auth';
 import { EmptyState } from '@/components/Skeleton';
 
 type Period = 'week' | 'month' | 'all';
-type Kind = 'contributors' | 'speed-tests' | 'outages';
+type Kind = 'contributors' | 'speed-tests' | 'outages' | 'provinces';
 
 export default function LeaderboardPage() {
   const t = useTranslations('leaderboard');
@@ -21,6 +21,7 @@ export default function LeaderboardPage() {
     queryFn: () => {
       if (kind === 'contributors') return api.leaderboardContributors(period);
       if (kind === 'speed-tests')  return api.leaderboardSpeedTests(period);
+      if (kind === 'provinces')    return api.leaderboardProvinces(period, 20);
       return api.leaderboardOutages(period);
     },
   });
@@ -56,14 +57,17 @@ export default function LeaderboardPage() {
 
       <div className="flex flex-wrap gap-2">
         {/* Kind tabs */}
-        <div className="inline-flex rounded-md border bg-white text-sm">
-          {(['contributors', 'speed-tests', 'outages'] as Kind[]).map((k) => (
+        <div className="inline-flex flex-wrap rounded-md border bg-white text-sm">
+          {(['contributors', 'speed-tests', 'outages', 'provinces'] as Kind[]).map((k) => (
             <button
               key={k}
               onClick={() => setKind(k)}
               className={`px-3 py-1.5 ${kind === k ? 'bg-vnred-500 text-white' : 'text-gray-700 hover:bg-gray-50'}`}
             >
-              {k === 'contributors' ? t('kind_contributors') : k === 'speed-tests' ? t('kind_speed_tests') : t('kind_outages')}
+              {k === 'contributors' ? t('kind_contributors')
+                : k === 'speed-tests' ? t('kind_speed_tests')
+                : k === 'provinces' ? t('kind_provinces')
+                : t('kind_outages')}
             </button>
           ))}
         </div>
@@ -84,9 +88,13 @@ export default function LeaderboardPage() {
 
       {isLoading ? (
         <p className="text-sm text-gray-500">…</p>
+      ) : kind === 'provinces' ? (
+        <ProvinceTable data={data?.leaderboard as any[]} t={t} />
       ) : (
         <ol className="space-y-1 rounded-md border bg-white shadow-sm">
-          {(data?.leaderboard || []).map((row) => <Row key={row.userId} row={row} kind={kind} t={t} />)}
+          {(data?.leaderboard as LeaderboardEntry[] || []).map((row) => (
+            <Row key={row.userId} row={row} kind={kind} t={t} />
+          ))}
           {(!data || data.leaderboard.length === 0) && (
             <li className="p-2">
               <EmptyState icon="🏆" title={t('noData')} hint={t('noDataHint')} />
@@ -95,6 +103,62 @@ export default function LeaderboardPage() {
         </ol>
       )}
     </div>
+  );
+}
+
+type ProvinceRow = {
+  rank: number;
+  province: string;
+  testCount: number;
+  uniqueDevices: number;
+  reportCount: number;
+  verifiedCount: number;
+  score: number;
+};
+
+function ProvinceTable({ data, t }: { data: ProvinceRow[] | undefined; t: (k: string, v?: any) => string }) {
+  if (!data || data.length === 0) {
+    return (
+      <div className="rounded-md border bg-white p-4">
+        <EmptyState icon="🗺️" title={t('noData')} hint={t('noDataHint')} />
+      </div>
+    );
+  }
+  return (
+    <ol className="rounded-md border bg-white shadow-sm">
+      {data.map((row) => {
+        const medal = row.rank === 1 ? '🥇' : row.rank === 2 ? '🥈' : row.rank === 3 ? '🥉' : null;
+        return (
+          <li
+            key={row.province}
+            className="flex items-center justify-between border-b px-4 py-3 last:border-0"
+          >
+            <div className="flex items-center gap-3">
+              <span className="w-8 text-center font-semibold text-gray-700">
+                {medal || `#${row.rank}`}
+              </span>
+              <div>
+                <span className="font-medium">{row.province}</span>
+                <p className="text-xs text-gray-500">
+                  {t('uniqueDevices', { count: row.uniqueDevices })}
+                </p>
+              </div>
+            </div>
+            <div className="text-right text-sm text-gray-600">
+              <span className="font-semibold text-vnred-600">
+                {t('stat_score', { score: row.score })}
+              </span>
+              <div className="text-xs text-gray-400">
+                {t('stat_meta', { tests: row.testCount, outages: row.reportCount })}
+                {row.verifiedCount > 0 && (
+                  <span className="ml-1 text-green-600">({row.verifiedCount} ✓)</span>
+                )}
+              </div>
+            </div>
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 

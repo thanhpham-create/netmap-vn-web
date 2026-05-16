@@ -343,6 +343,21 @@ export const api = {
       `/api/v1/leaderboard/contributors?period=${period}&limit=${limit}`,
     ),
 
+  leaderboardProvinces: (period: 'week' | 'month' | 'all' = 'month', limit = 20) =>
+    request<{
+      period: string;
+      leaderboard: Array<{
+        rank: number;
+        province: string;
+        testCount: number;
+        uniqueDevices: number;
+        reportCount: number;
+        verifiedCount: number;
+        score: number;
+        lastAt: string;
+      }>;
+    }>(`/api/v1/leaderboard/provinces?period=${period}&limit=${limit}`),
+
   leaderboardMe: (tokens: JwtTokens, period: 'week' | 'month' | 'all' = 'month') =>
     request<{
       period: string;

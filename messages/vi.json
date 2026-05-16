@@ -145,6 +145,8 @@
     "kind_contributors": "Tổng hợp",
     "kind_speed_tests": "Speed test",
     "kind_outages": "Sự cố",
+    "kind_provinces": "Tỉnh",
+    "uniqueDevices": "{count} thiết bị khác nhau",
     "period_week": "7 ngày",
     "period_month": "30 ngày",
     "period_all": "Toàn thời gian",

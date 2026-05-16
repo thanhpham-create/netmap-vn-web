@@ -145,6 +145,8 @@
     "kind_contributors": "Combined",
     "kind_speed_tests": "Speed tests",
     "kind_outages": "Outages",
+    "kind_provinces": "Provinces",
+    "uniqueDevices": "{count} unique devices",
     "period_week": "7 days",
     "period_month": "30 days",
     "period_all": "All time",
