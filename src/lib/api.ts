@@ -294,12 +294,16 @@ export const api = {
     }>(`/api/v1/coverage/history?${p}`);
   },
 
-  heatmap: (q: { minLat: number; maxLat: number; minLng: number; maxLng: number; carrier?: string; days?: number }) => {
+  heatmap: (q: {
+    minLat: number; maxLat: number; minLng: number; maxLng: number;
+    carrier?: string; days?: number; endDate?: string;
+  }) => {
     const p = new URLSearchParams();
     p.set('minLat', String(q.minLat)); p.set('maxLat', String(q.maxLat));
     p.set('minLng', String(q.minLng)); p.set('maxLng', String(q.maxLng));
     if (q.carrier) p.set('carrier', q.carrier);
     if (q.days) p.set('days', String(q.days));
+    if (q.endDate) p.set('endDate', q.endDate);
     return request<{ points: HeatmapPoint[]; count: number }>(`/api/v1/coverage/heatmap?${p}`);
   },
 

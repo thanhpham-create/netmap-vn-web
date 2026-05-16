@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { api, type HeatmapPoint } from '@/lib/api';
 import { track } from '@/lib/analytics';
 import CoverageHistoryModal from './CoverageHistoryModal';
+import TimelineSlider from './TimelineSlider';
 
 const DEFAULT_CENTER: [number, number] = [106.5, 16.0];
 const DEFAULT_ZOOM = 5;
@@ -37,6 +38,8 @@ export default function CoverageMap() {
   const [loading, setLoading] = useState(false);
   const [carrier, setCarrier] = useState<string>('');
   const [historyAt, setHistoryAt] = useState<{ lat: number; lng: number } | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);   // null = real-time
+  const [showTimeline, setShowTimeline] = useState(false);
 
   // Init map once
   useEffect(() => {
@@ -129,6 +132,7 @@ export default function CoverageMap() {
           maxLng: bounds.getEast(),
           carrier: carrier || undefined,
           days: 30,
+          endDate: endDate ? endDate.toISOString() : undefined,
         });
         if (!cancelled) setPoints(res.points);
       } catch (err) {
@@ -146,7 +150,7 @@ export default function CoverageMap() {
       cancelled = true;
       map.off('moveend', loadHeatmap);
     };
-  }, [carrier]);
+  }, [carrier, endDate]);
 
   // Render points as circles + click popup
   useEffect(() => {
@@ -302,7 +306,27 @@ export default function CoverageMap() {
           <option value="CMC">CMC</option>
         </select>
         {loading && <p className="mt-1 text-xs text-gray-500">{t('loading')}</p>}
+        <button
+          onClick={() => {
+            setShowTimeline((v) => !v);
+            if (showTimeline) setEndDate(null);   // turning off → back to real-time
+          }}
+          className={`mt-1 w-full rounded border px-2 py-1 text-xs ${
+            showTimeline
+              ? 'border-vnred-500 bg-vnred-50 text-vnred-700'
+              : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50'
+          }`}
+        >
+          {showTimeline ? `⏷ ${t('timelineHide')}` : `🕐 ${t('timelineShow')}`}
+        </button>
       </div>
+
+      {/* Timeline slider (chỉ hiện khi toggle on) */}
+      {showTimeline && (
+        <div className="absolute inset-x-2 bottom-2 z-10 md:inset-x-auto md:left-1/2 md:bottom-3 md:-translate-x-1/2 md:max-w-md md:w-[480px]">
+          <TimelineSlider monthsBack={12} endDate={endDate} onChange={setEndDate} />
+        </div>
+      )}
 
       {/* Legend */}
       <div className="absolute bottom-2 left-2 z-10 rounded-md bg-white/95 p-2 text-xs shadow-md md:bottom-3 md:left-3">

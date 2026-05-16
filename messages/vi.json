@@ -62,7 +62,16 @@
     "loading": "Đang tải…",
     "speedLegend": "Tốc độ ↓",
     "mbps": "Mbps",
-    "viewHistory": "Xem lịch sử"
+    "viewHistory": "Xem lịch sử",
+    "timelineShow": "Xem theo thời gian",
+    "timelineHide": "Ẩn slider"
+  },
+  "timeline": {
+    "play": "Phát animation",
+    "pause": "Tạm dừng",
+    "slider": "Thanh thời gian",
+    "realtime": "Hiện tại",
+    "now": "Bây giờ"
   },
   "historyModal": {
     "title": "Lịch sử chất lượng mạng tại điểm này",

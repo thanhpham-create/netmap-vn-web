@@ -62,7 +62,16 @@
     "loading": "Loading…",
     "speedLegend": "Speed ↓",
     "mbps": "Mbps",
-    "viewHistory": "View history"
+    "viewHistory": "View history",
+    "timelineShow": "Show timeline",
+    "timelineHide": "Hide slider"
+  },
+  "timeline": {
+    "play": "Play animation",
+    "pause": "Pause",
+    "slider": "Time slider",
+    "realtime": "Real-time",
+    "now": "Now"
   },
   "historyModal": {
     "title": "Network history at this location",
