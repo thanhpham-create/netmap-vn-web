@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import NationalOutages from '@/components/NationalOutages';
+import AiOutageSummary from '@/components/AiOutageSummary';
 import CoverageMap from '@/components/CoverageMapClient';
 
 export default function HomePage() {
@@ -18,6 +19,8 @@ export default function HomePage() {
       </section>
 
       <NationalOutages />
+
+      <AiOutageSummary />
 
       <CoverageMap />
 

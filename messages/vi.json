@@ -37,6 +37,11 @@
     "runSpeedtest": "Chạy speed test",
     "reportOutage": "Báo cáo sự cố"
   },
+  "aiSummary": {
+    "title": "Tổng quan tình hình mạng",
+    "aiBadge": "AI",
+    "footer": "Dựa trên {count} cụm sự cố trong 6h qua · cập nhật mỗi 15 phút"
+  },
   "footer": {
     "tagline": "Bản đồ phủ sóng & sự cố mạng di động Việt Nam, dữ liệu cộng đồng.",
     "about": "Giới thiệu",

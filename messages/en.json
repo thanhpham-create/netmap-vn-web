@@ -37,6 +37,11 @@
     "runSpeedtest": "Run speed test",
     "reportOutage": "Report outage"
   },
+  "aiSummary": {
+    "title": "Network situation overview",
+    "aiBadge": "AI",
+    "footer": "Based on {count} outage clusters in the last 6h · refreshed every 15 min"
+  },
   "footer": {
     "tagline": "Coverage & outage map for Vietnam mobile carriers, community-driven.",
     "about": "About",

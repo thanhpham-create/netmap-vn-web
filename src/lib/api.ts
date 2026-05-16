@@ -327,6 +327,14 @@ export const api = {
   nationalOutages: () =>
     request<{ summary: NationalOutageSummary[]; generatedAt: string }>('/api/v1/outages/national'),
 
+  aiOutageSummary: () =>
+    request<{
+      summary: string | null;
+      outageCount: number;
+      generatedAt: string;
+      enabled: boolean;
+    }>('/api/v1/outages/ai-summary'),
+
   // Leaderboard
   leaderboardSpeedTests: (period: 'week' | 'month' | 'all' = 'month', limit = 10) =>
     request<{ period: string; leaderboard: LeaderboardEntry[] }>(
