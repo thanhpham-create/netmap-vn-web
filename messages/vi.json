@@ -47,7 +47,16 @@
     "about": "Giới thiệu",
     "terms": "Điều khoản",
     "privacy": "Bảo mật",
-    "apiDocs": "API Docs"
+    "apiDocs": "API Docs",
+    "status": "Trạng thái"
+  },
+  "status": {
+    "title": "Trạng thái hệ thống",
+    "subtitle": "Kiểm tra real-time trạng thái backend NetMap VN. Tự cập nhật mỗi 30 giây.",
+    "allOperational": "Hệ thống hoạt động bình thường",
+    "issuesDetected": "Phát hiện sự cố",
+    "checking": "Đang kiểm tra…",
+    "autoRefresh": "Tự động cập nhật mỗi {seconds}s"
   },
   "outageBanner": {
     "loading": "Đang tải sự cố…",

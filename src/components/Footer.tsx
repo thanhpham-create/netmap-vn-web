@@ -22,6 +22,7 @@ export default async function Footer() {
             <Link href="/terms" className="hover:text-vnred-600 hover:underline">{t('terms')}</Link>
             <Link href="/privacy" className="hover:text-vnred-600 hover:underline">{t('privacy')}</Link>
             <Link href="/api/docs" className="hover:text-vnred-600 hover:underline">{t('apiDocs')}</Link>
+            <Link href="/status" className="hover:text-vnred-600 hover:underline">{t('status')}</Link>
             <a
               href="https://github.com/thanhpham-create/netmap-vn-web"
               target="_blank"

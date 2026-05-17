@@ -47,7 +47,16 @@
     "about": "About",
     "terms": "Terms",
     "privacy": "Privacy",
-    "apiDocs": "API Docs"
+    "apiDocs": "API Docs",
+    "status": "Status"
+  },
+  "status": {
+    "title": "System status",
+    "subtitle": "Real-time backend health for NetMap VN. Auto-refresh every 30s.",
+    "allOperational": "All systems operational",
+    "issuesDetected": "Issues detected",
+    "checking": "Checking…",
+    "autoRefresh": "Auto-refresh every {seconds}s"
   },
   "outageBanner": {
     "loading": "Loading outages…",
