@@ -17,7 +17,8 @@ export type AnalyticsEvent =
   | 'install_prompt_accepted'
   | 'notification_subscribed'
   | 'pwa_launched'           // detect ?source=pwa in URL
-  | 'coverage_history_opened'; // user clicked "Xem lịch sử" on a map point
+  | 'coverage_history_opened' // user clicked "Xem lịch sử" on a map point
+  | 'share_clicked';         // social share button — props: platform
 
 type Props = Record<string, string | number | boolean | null>;
 
