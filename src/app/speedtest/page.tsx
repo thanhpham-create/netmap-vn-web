@@ -18,6 +18,7 @@ export default function SpeedtestPage() {
   const { ensureDeviceRegistered, tokens } = useAuth();
   const [carrier, setCarrier] = useState('Viettel');
   const [carrierAutoSet, setCarrierAutoSet] = useState(false);
+  const [carrierOverride, setCarrierOverride] = useState(false);   // user clicked "Override"
   const [detectedNetwork, setDetectedNetwork] = useState<ReturnType<typeof detectNetworkType> | null>(null);
 
   // Detect network type (WiFi/cellular) on mount via navigator.connection
@@ -196,13 +197,49 @@ export default function SpeedtestPage() {
 
       {/* Form */}
       <div className="space-y-3 rounded-md border bg-white p-4 shadow-sm">
-        <label className="block text-sm">
-          <span className="font-medium text-gray-700">{t('carrier')}</span>
-          <select value={carrier} onChange={(e) => setCarrier(e.target.value)}
-                  className="mt-1 w-full rounded-md border px-3 py-2">
-            {CARRIERS.map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
-        </label>
+        {/* Carrier — lock khi /whoami confidence='high' để chống ghi nhầm nhà mạng */}
+        <div className="block text-sm">
+          <div className="flex items-center justify-between">
+            <span className="font-medium text-gray-700">{t('carrier')}</span>
+            {whoami?.confidence === 'high' && whoami.carrier && !carrierOverride && (
+              <button
+                type="button"
+                onClick={() => setCarrierOverride(true)}
+                className="text-xs text-gray-400 hover:text-vnred-600 hover:underline"
+              >
+                {t('overrideCarrier')}
+              </button>
+            )}
+            {carrierOverride && (
+              <button
+                type="button"
+                onClick={() => {
+                  setCarrierOverride(false);
+                  if (whoami?.carrier) setCarrier(whoami.carrier);
+                }}
+                className="text-xs text-gray-400 hover:text-vnred-600 hover:underline"
+              >
+                {t('useDetected')}
+              </button>
+            )}
+          </div>
+          {whoami?.confidence === 'high' && whoami.carrier && !carrierOverride ? (
+            <div className="mt-1 flex items-center gap-2 rounded-md border bg-gray-50 px-3 py-2">
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-green-100 text-green-700 text-xs">
+                ✓
+              </span>
+              <span className="font-medium">{whoami.carrier}</span>
+              <span className="ml-auto text-[10px] text-gray-400">
+                AS{whoami.asn} · {whoami.asName}
+              </span>
+            </div>
+          ) : (
+            <select value={carrier} onChange={(e) => setCarrier(e.target.value)}
+                    className="mt-1 w-full rounded-md border px-3 py-2">
+              {CARRIERS.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          )}
+        </div>
         <label className="block text-sm">
           <span className="font-medium text-gray-700">{t('networkType')}</span>
           <select value={networkType} onChange={(e) => setNetworkType(e.target.value)}
