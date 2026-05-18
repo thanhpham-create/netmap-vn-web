@@ -189,6 +189,16 @@ export default function SpeedtestPage() {
         </div>
       )}
 
+      {/* Debug info — show raw whoami response to diagnose why carrier didn't auto-detect */}
+      {whoami && (
+        <details className="rounded-md border bg-gray-50 p-2 text-[10px] text-gray-500">
+          <summary className="cursor-pointer">🔍 Thông tin chẩn đoán carrier</summary>
+          <pre className="mt-1 overflow-x-auto whitespace-pre-wrap break-all">
+            {JSON.stringify(whoami, null, 2)}
+          </pre>
+        </details>
+      )}
+
       {!whoami?.carrier && (
         <div className="rounded-md border border-blue-200 bg-blue-50 p-3 text-xs text-blue-900">
           {t('carrierHint')}
