@@ -143,7 +143,10 @@
     "networkMismatch": "⚠️ You are on {detected} but selected {selected}. The browser cannot measure {selected} while connected via {detected} — the result reflects {detected}.",
     "networkUnknown": "Could not detect network type (Safari/iOS not supported). Please pick the correct one manually.",
     "overrideCarrier": "Override carrier?",
-    "useDetected": "← Use detected carrier"
+    "useDetected": "← Use detected carrier",
+    "carrierLockedHint": "🔒 Carrier is locked by your public IP's ASN. To test a different carrier → turn off WiFi, use that carrier's cellular SIM, then reload.",
+    "carrierManualHint": "Could not auto-detect carrier. Please pick the carrier you're ACTUALLY connected through — don't guess.",
+    "throughputInfo": "ℹ️ Speed measured against Singapore server (Railway), not Vietnam local. Results typically 50-70% lower than speedtest.net (Vietnam server). NetMap is for relative comparison across locations/carriers/time — not for measuring absolute bandwidth."
   },
   "compare": {
     "title": "Compare carriers",

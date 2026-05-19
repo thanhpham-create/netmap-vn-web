@@ -143,7 +143,10 @@
     "networkMismatch": "⚠️ Bạn đang dùng {detected} nhưng đã chọn {selected}. Browser không thể đo được {selected} khi đang kết nối qua {detected} — kết quả sẽ phản ánh {detected}.",
     "networkUnknown": "Không phát hiện được loại mạng (Safari/iOS không hỗ trợ). Bạn cần tự chọn đúng.",
     "overrideCarrier": "Đổi nhà mạng?",
-    "useDetected": "← Dùng nhà mạng phát hiện"
+    "useDetected": "← Dùng nhà mạng phát hiện",
+    "carrierLockedHint": "🔒 Nhà mạng được khóa theo ASN của IP công khai. Muốn đo nhà mạng khác → tắt WiFi, dùng SIM cellular của nhà mạng đó, rồi reload trang.",
+    "carrierManualHint": "Không detect được nhà mạng tự động. Vui lòng chọn đúng nhà mạng anh ĐANG kết nối — đừng chọn bừa.",
+    "throughputInfo": "ℹ️ Tốc độ đo qua server Singapore (Railway), không phải VN local. Kết quả thường thấp hơn 50-70% so với speedtest.net (server VN). NetMap dùng cho so sánh tương đối giữa các điểm/nhà mạng/thời gian — không phải để đo bandwidth tuyệt đối."
   },
   "compare": {
     "title": "So sánh nhà mạng",

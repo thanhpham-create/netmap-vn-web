@@ -96,11 +96,15 @@ export default function SpeedtestPage() {
   async function submit() {
     if (!result || !coords) return;
     setError(null);
+    // PARANOID safety: nếu /whoami high confidence, ALWAYS dùng detected carrier
+    // dù state `carrier` có khác gì đi nữa. Tránh ghi nhầm data nếu UX bug.
+    const effectiveCarrier =
+      whoami?.confidence === 'high' && whoami.carrier ? whoami.carrier : carrier;
     try {
       const deviceToken = await ensureDeviceRegistered();
       await api.submitSpeedTest(
         {
-          carrierName: carrier,
+          carrierName: effectiveCarrier,
           networkType,
           downloadMbps: result.downloadMbps,
           uploadMbps: result.uploadMbps,
@@ -114,7 +118,7 @@ export default function SpeedtestPage() {
       );
       setSubmitted(true);
       track('speedtest_submitted', {
-        carrier,
+        carrier: effectiveCarrier,
         network_type: networkType,
         download_bucket: bucketSpeedMbps(result.downloadMbps),
       });
@@ -161,13 +165,6 @@ export default function SpeedtestPage() {
         </div>
       )}
 
-      {/* Mismatch warning when user's selection differs from detected */}
-      {whoami?.carrier && carrier !== whoami.carrier && (
-        <div className="rounded-md border border-vnred-200 bg-vnred-50 p-3 text-xs text-vnred-700">
-          {t('mismatchWarning', { detected: whoami.carrier, selected: carrier })}
-        </div>
-      )}
-
       {/* Network type detected banner */}
       {detectedNetwork?.networkType && networkType === detectedNetwork.networkType && (
         <div className="rounded-md border border-green-200 bg-green-50 p-2 text-xs text-green-900">
@@ -207,47 +204,36 @@ export default function SpeedtestPage() {
 
       {/* Form */}
       <div className="space-y-3 rounded-md border bg-white p-4 shadow-sm">
-        {/* Carrier — lock khi /whoami confidence='high' để chống ghi nhầm nhà mạng */}
+        {/* Carrier — STRICT: nếu /whoami high confidence thì KHÔNG override được.
+            Một thiết bị + một thời điểm = một đường truyền. Dropdown ko thay đổi
+            được fact đó. Muốn đo nhà mạng khác → switch physical network. */}
         <div className="block text-sm">
-          <div className="flex items-center justify-between">
-            <span className="font-medium text-gray-700">{t('carrier')}</span>
-            {whoami?.confidence === 'high' && whoami.carrier && !carrierOverride && (
-              <button
-                type="button"
-                onClick={() => setCarrierOverride(true)}
-                className="text-xs text-gray-400 hover:text-vnred-600 hover:underline"
-              >
-                {t('overrideCarrier')}
-              </button>
-            )}
-            {carrierOverride && (
-              <button
-                type="button"
-                onClick={() => {
-                  setCarrierOverride(false);
-                  if (whoami?.carrier) setCarrier(whoami.carrier);
-                }}
-                className="text-xs text-gray-400 hover:text-vnred-600 hover:underline"
-              >
-                {t('useDetected')}
-              </button>
-            )}
-          </div>
-          {whoami?.confidence === 'high' && whoami.carrier && !carrierOverride ? (
-            <div className="mt-1 flex items-center gap-2 rounded-md border bg-gray-50 px-3 py-2">
-              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-green-100 text-green-700 text-xs">
-                ✓
-              </span>
-              <span className="font-medium">{whoami.carrier}</span>
-              <span className="ml-auto text-[10px] text-gray-400">
-                AS{whoami.asn} · {whoami.asName}
-              </span>
-            </div>
+          <span className="font-medium text-gray-700">{t('carrier')}</span>
+          {whoami?.confidence === 'high' && whoami.carrier ? (
+            <>
+              <div className="mt-1 flex items-center gap-2 rounded-md border-2 border-green-200 bg-green-50 px-3 py-2">
+                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-green-200 text-green-800 text-xs">
+                  ✓
+                </span>
+                <span className="font-semibold text-green-900">{whoami.carrier}</span>
+                <span className="ml-auto text-[10px] text-green-700">
+                  AS{whoami.asn}{whoami.asName ? ` · ${whoami.asName}` : ''}
+                </span>
+              </div>
+              <p className="mt-1 text-[11px] text-gray-500">
+                {t('carrierLockedHint')}
+              </p>
+            </>
           ) : (
-            <select value={carrier} onChange={(e) => setCarrier(e.target.value)}
-                    className="mt-1 w-full rounded-md border px-3 py-2">
-              {CARRIERS.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
+            <>
+              <select value={carrier} onChange={(e) => setCarrier(e.target.value)}
+                      className="mt-1 w-full rounded-md border px-3 py-2">
+                {CARRIERS.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <p className="mt-1 text-[11px] text-amber-600">
+                ⚠️ {t('carrierManualHint')}
+              </p>
+            </>
           )}
         </div>
         <label className="block text-sm">
@@ -285,6 +271,9 @@ export default function SpeedtestPage() {
             <Stat label={t('upload')} value={result.uploadMbps} unit="Mbps" />
             <Stat label={t('ping')} value={result.latencyMs} unit="ms" />
           </div>
+          <p className="rounded-md border border-blue-200 bg-blue-50 p-2 text-[11px] leading-relaxed text-blue-900">
+            {t('throughputInfo')}
+          </p>
           {coords && (
             <p className="text-xs text-gray-500">
               📍 {coords.latitude.toFixed(5)}, {coords.longitude.toFixed(5)}
