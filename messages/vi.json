@@ -25,6 +25,19 @@
     "title": "Bản đồ phủ sóng 5G Việt Nam",
     "subtitle": "Dữ liệu cộng đồng từ <b>speed test</b> và <b>báo cáo sự cố</b>. Di chuyển bản đồ để cập nhật khu vực."
   },
+  "welcome": {
+    "appName": "Chào mừng đến NetMap VN",
+    "step1Title": "Bản đồ phủ sóng cộng đồng",
+    "step1Desc": "Xem chất lượng mạng di động Việt Nam theo từng vị trí, do người dùng đóng góp. So sánh Viettel, VNPT, MobiFone, Vietnamobile, FPT, CMC.",
+    "step2Title": "Speed test tại vị trí của bạn",
+    "step2Desc": "Đo tốc độ download/upload/ping ngay tại điểm anh đang đứng. Kết quả tự gắn vị trí + nhà mạng phát hiện qua IP.",
+    "step3Title": "Cộng đồng dùng cho cộng đồng",
+    "step3Desc": "Mỗi đo của anh giúp bản đồ chính xác hơn cho người khác. Báo cáo sự cố để cảnh báo người dùng cùng khu vực.",
+    "next": "Tiếp",
+    "back": "Quay lại",
+    "skip": "Bỏ qua",
+    "startNow": "Bắt đầu đo →"
+  },
   "demoBanner": {
     "label": "Dữ liệu demo",
     "description": "NetMap VN đang chạy với dữ liệu mẫu để minh hoạ. Khi cộng đồng đóng góp đủ, dữ liệu thực sẽ thay thế.",

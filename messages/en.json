@@ -25,6 +25,19 @@
     "title": "Vietnam 5G Coverage Map",
     "subtitle": "Crowdsourced data from <b>speed tests</b> and <b>outage reports</b>. Pan the map to update the area."
   },
+  "welcome": {
+    "appName": "Welcome to NetMap VN",
+    "step1Title": "Community coverage map",
+    "step1Desc": "See Vietnam mobile network quality at every location, contributed by real users. Compare Viettel, VNPT, MobiFone, Vietnamobile, FPT, CMC.",
+    "step2Title": "Speed test where you are",
+    "step2Desc": "Measure download/upload/ping right at your current location. Auto-tagged with your position and detected carrier from IP.",
+    "step3Title": "Built by the community, for the community",
+    "step3Desc": "Every test makes the map more accurate for everyone. Report outages to alert users in your area.",
+    "next": "Next",
+    "back": "Back",
+    "skip": "Skip",
+    "startNow": "Start measuring →"
+  },
   "demoBanner": {
     "label": "Demo data",
     "description": "NetMap VN is running with sample data for illustration. Real data will replace it as the community contributes.",

@@ -10,6 +10,7 @@ import Footer from '@/components/Footer';
 import DemoBanner from '@/components/DemoBanner';
 import JsonLd from '@/components/JsonLd';
 import CommandPalette from '@/components/CommandPalette';
+import WelcomeOnboarding from '@/components/WelcomeOnboarding';
 import ServiceWorkerRegister from '@/components/ServiceWorkerRegister';
 import InstallPrompt from '@/components/InstallPrompt';
 
@@ -101,6 +102,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <Footer />
             <InstallPrompt />
             <CommandPalette />
+            <WelcomeOnboarding />
             <ServiceWorkerRegister />
           </Providers>
         </NextIntlClientProvider>
