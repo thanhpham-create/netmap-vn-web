@@ -9,10 +9,12 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
 // Tunables
-const DOWNLOAD_DURATION_MS = 8000;   // total test time
-const UPLOAD_DURATION_MS   = 6000;
-const DOWNLOAD_STREAMS = 4;
-const STREAM_SIZE_MB = 25;           // large enough để 4 streams × 25MB không xong trong 8s với 100Mbps
+const DOWNLOAD_DURATION_MS = 10000;  // tăng từ 8s → 10s vì cần warmup TCP
+const UPLOAD_DURATION_MS   = 8000;   // tăng từ 6s → 8s cho slow upload
+// 2 streams × 10MB = 20MB total in flight — đủ saturate 100 Mbps trong 10s,
+// nhẹ hơn 4×25MB (giảm memory + CPU pressure trên Railway free tier).
+const DOWNLOAD_STREAMS = 2;
+const STREAM_SIZE_MB = 10;
 const PING_SAMPLES = 5;
 
 function throwIfRateLimited(res: Response, context: string): void {
