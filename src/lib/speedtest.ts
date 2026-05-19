@@ -13,7 +13,6 @@ const DOWNLOAD_DURATION_MS = 8000;   // total test time
 const UPLOAD_DURATION_MS   = 6000;
 const DOWNLOAD_STREAMS = 4;
 const STREAM_SIZE_MB = 25;           // large enough để 4 streams × 25MB không xong trong 8s với 100Mbps
-const UPLOAD_CHUNK_MB = 2;           // upload N chunks back-to-back trong window
 const PING_SAMPLES = 5;
 
 function throwIfRateLimited(res: Response, context: string): void {
@@ -117,68 +116,76 @@ export async function measureDownload(onProgress?: (mbps: number) => void): Prom
 }
 
 /**
- * Time-bounded upload — gửi chunks back-to-back cho đến hết window.
- * Đơn stream để giữ logic đơn giản (mạng VN asym, up thường thấp hơn down).
+ * Time-bounded upload via XMLHttpRequest — XHR cho phép track upload progress
+ * real-time qua xhr.upload.onprogress. Khác fetch (không có upload progress event).
+ *
+ * Tại sao XHR thay fetch: trên upload chậm, fetch phải đợi cả body upload xong mới
+ * resolve, nếu timeout giữa chừng → 0 bytes counted. XHR progress event cho biết
+ * chính xác bao nhiêu byte đã upload tại moment timeout.
+ *
+ * Strategy: gửi 1 payload lớn (UPLOAD_MAX_MB), abort sau UPLOAD_DURATION_MS,
+ * count `loaded` bytes từ event cuối cùng → tính Mbps.
  */
+const UPLOAD_MAX_MB = 15;
+
 export async function measureUpload(onProgress?: (mbps: number) => void): Promise<number> {
-  // Pre-generate 1 chunk để reuse, tránh CPU spike random gen mỗi vòng
-  const chunkBytes = UPLOAD_CHUNK_MB * 1024 * 1024;
-  const buffer = new ArrayBuffer(chunkBytes);
-  const buf = new Uint8Array(buffer);
+  const totalBytes = UPLOAD_MAX_MB * 1024 * 1024;
+  const buf = new Uint8Array(new ArrayBuffer(totalBytes));
   if (window.crypto?.getRandomValues) {
     const CHUNK = 65536;
-    for (let off = 0; off < chunkBytes; off += CHUNK) {
-      window.crypto.getRandomValues(buf.subarray(off, Math.min(off + CHUNK, chunkBytes)));
+    for (let off = 0; off < totalBytes; off += CHUNK) {
+      window.crypto.getRandomValues(buf.subarray(off, Math.min(off + CHUNK, totalBytes)));
     }
   }
 
-  const ctrl = new AbortController();
-  let totalBytes = 0;
-  const t0 = performance.now();
-  const timer = setTimeout(() => ctrl.abort(), UPLOAD_DURATION_MS);
+  return new Promise<number>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    const t0 = performance.now();
+    let lastBytes = 0;
 
-  const progressInterval = setInterval(() => {
-    const elapsed = performance.now() - t0;
-    if (elapsed > 0 && onProgress) {
-      onProgress((totalBytes * 8) / (elapsed * 1000));
-    }
-  }, 500);
+    const timer = setTimeout(() => {
+      try { xhr.abort(); } catch {}
+    }, UPLOAD_DURATION_MS);
 
-  try {
-    while (!ctrl.signal.aborted) {
-      try {
-        const res = await fetch(`${API_URL}/api/v1/measure/upload`, {
-          method: 'POST',
-          body: buf,
-          headers: { 'Content-Type': 'application/octet-stream' },
-          signal: ctrl.signal,
-        });
-        if (res.status === 429) throw new Error('Đã vượt giới hạn upload.');
-        if (res.ok) {
-          totalBytes += chunkBytes;
-        }
-      } catch (err: any) {
-        const msg = err?.message || '';
-        const name = err?.name || '';
-        if (name === 'AbortError' || msg.includes('aborted')) {
-          break;   // expected at timeout
-        }
-        // Other errors → break loop (don't infinite loop on real failures)
-        break;
+    function finalize(reason: 'progress-end' | 'aborted' | 'error' | 'complete') {
+      clearTimeout(timer);
+      const elapsedMs = performance.now() - t0;
+      if (lastBytes === 0) {
+        reject(new Error(`Không upload được dữ liệu nào (${reason}). Mạng upload có thể quá chậm hoặc bị chặn.`));
+        return;
       }
+      const mbps = (lastBytes * 8) / (elapsedMs * 1000);
+      resolve(mbps);
     }
-  } finally {
-    clearTimeout(timer);
-    clearInterval(progressInterval);
-  }
 
-  const elapsedMs = performance.now() - t0;
-  if (totalBytes === 0) {
-    throw new Error('Không upload được dữ liệu nào. Kiểm tra kết nối mạng.');
-  }
-  const mbps = (totalBytes * 8) / (elapsedMs * 1000);
-  if (onProgress) onProgress(mbps);
-  return mbps;
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) {
+        lastBytes = e.loaded;
+        const elapsed = performance.now() - t0;
+        if (elapsed > 0 && onProgress) {
+          onProgress((e.loaded * 8) / (elapsed * 1000));
+        }
+      }
+    };
+    xhr.upload.onload = () => finalize('complete');
+    xhr.upload.onabort = () => finalize('aborted');
+    xhr.upload.onerror = () => finalize('error');
+    // Some browsers fire only onreadystatechange when aborted
+    xhr.onreadystatechange = () => {
+      if (xhr.readyState === XMLHttpRequest.DONE && lastBytes > 0) {
+        finalize('progress-end');
+      }
+    };
+
+    try {
+      xhr.open('POST', `${API_URL}/api/v1/measure/upload`);
+      xhr.setRequestHeader('Content-Type', 'application/octet-stream');
+      xhr.send(buf);
+    } catch (err: any) {
+      clearTimeout(timer);
+      reject(new Error(`Upload failed to start: ${err?.message || err}`));
+    }
+  });
 }
 
 export type SpeedTestResult = {
