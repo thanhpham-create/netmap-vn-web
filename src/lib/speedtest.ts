@@ -8,13 +8,20 @@
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
+// Download phase: fetch pre-generated random .bin files từ Vercel CDN.
+// Vercel/Cloudflare edge có POP gần VN hơn Railway Singapore nhiều — tải tiles
+// đến edge ~5-10ms latency thay vì 30-50ms tới Railway. Anh có 100Mbps thực sẽ
+// đo được gần với speedtest.net.
+//
+// Files được prebuild bởi scripts/gen-speedtest-files.mjs trước mỗi deploy.
+// Cache-Control immutable trong vercel.json → cache 7 ngày ở edge.
+const DOWNLOAD_FILE_URL = (sizeMb: number) => `/speedtest-${sizeMb}mb.bin`;
+
 // Tunables
 const DOWNLOAD_DURATION_MS = 10000;  // tăng từ 8s → 10s vì cần warmup TCP
 const UPLOAD_DURATION_MS   = 8000;   // tăng từ 6s → 8s cho slow upload
-// 2 streams × 10MB = 20MB total in flight — đủ saturate 100 Mbps trong 10s,
-// nhẹ hơn 4×25MB (giảm memory + CPU pressure trên Railway free tier).
-const DOWNLOAD_STREAMS = 2;
-const STREAM_SIZE_MB = 10;
+const DOWNLOAD_STREAMS = 4;
+const STREAM_SIZE_MB = 10;           // /speedtest-10mb.bin (Vercel CDN edge)
 const PING_SAMPLES = 5;
 
 function throwIfRateLimited(res: Response, context: string): void {
@@ -74,7 +81,10 @@ export async function measureDownload(onProgress?: (mbps: number) => void): Prom
 
   async function oneStream() {
     try {
-      const res = await fetch(`${API_URL}/api/v1/measure/download/${STREAM_SIZE_MB}`, {
+      // Append cache-buster để force re-download mỗi stream (Vercel edge cache OK,
+      // browser cache bypass) — đo throughput thực, không phải hit memory cache.
+      const url = `${DOWNLOAD_FILE_URL(STREAM_SIZE_MB)}?_=${Date.now()}-${Math.random()}`;
+      const res = await fetch(url, {
         cache: 'no-store',
         signal: ctrl.signal,
       });
